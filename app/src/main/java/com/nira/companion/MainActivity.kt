@@ -47,7 +47,7 @@ class MainActivity : FragmentActivity() {
             var chatLog by remember {
                 mutableStateOf(
                     listOf(
-                        "NiRa: வாடா, நான் இங்க தான் இருக்கேன். Mode மாத்தணும்னா `/work`, `/task`, `/emotional`, `/normal` அல்லது `/intimacy mode` சொல்லு."
+                        "NiRa: வாடா, நான் இங்க தான் இருக்கேன். உன் ஃபைல்ஸ் மற்றும் mode வச்சு பதில் பேசுவேன். `/work`, `/task`, `/emotional`, `/normal` அல்லது `/intimacy mode` சொல்லு."
                     )
                 )
             }
@@ -55,10 +55,11 @@ class MainActivity : FragmentActivity() {
             LaunchedEffect(Unit) {
                 scope.launch {
                     val health = checkCoreHealth()
-                    statusText = if (health != null) {
-                        "Core Online (${health.optString("mode", "normal")}) • $deviceModel"
+                    if (health != null) {
+                        activeMode = health.optString("mode", "normal")
+                        statusText = "Core Online ($activeMode) • $deviceModel"
                     } else {
-                        "Termux Core offline (127.0.0.1:8765) • $deviceModel"
+                        statusText = "Termux Core offline (127.0.0.1:8765) • $deviceModel"
                     }
                 }
             }
@@ -105,8 +106,18 @@ class MainActivity : FragmentActivity() {
                 prompt.authenticate(info)
             }
 
-            val bgColor = if (activeMode == "intimacy") Color(0xFF1A0B24) else Color(0xFF0A0E17)
-            val accentColor = if (activeMode == "intimacy") Color(0xFFC084FC) else Color(0xFF22D3EE)
+            val bgColor = when (activeMode) {
+                "intimacy" -> Color(0xFF1A0B24)
+                "work" -> Color(0xFF091624)
+                "emotional" -> Color(0xFF171121)
+                else -> Color(0xFF0A0E17)
+            }
+            val accentColor = when (activeMode) {
+                "intimacy" -> Color(0xFFC084FC)
+                "work" -> Color(0xFF38BDF8)
+                "emotional" -> Color(0xFFF472B6)
+                else -> Color(0xFF22D3EE)
+            }
 
             Column(
                 modifier = Modifier
@@ -160,7 +171,7 @@ class MainActivity : FragmentActivity() {
                         value = inputText,
                         onValueChange = { inputText = it },
                         modifier = Modifier.weight(1f),
-                        placeholder = { Text("Type or /intimacy mode...", color = Color(0xFF64748B)) },
+                        placeholder = { Text("Ask NiRa or /work /intimacy mode...", color = Color(0xFF64748B)) },
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.White,
@@ -194,17 +205,16 @@ class MainActivity : FragmentActivity() {
                                 }
                             } else {
                                 scope.launch {
-                                    val health = checkCoreHealth()
-                                    if (health != null) {
-                                        val saved = postJson(
-                                            "$coreBaseUrl/memory/add",
-                                            JSONObject().apply {
-                                                put("bucket", "recent")
-                                                put("content", raw)
-                                                put("pinned", false)
-                                            }
-                                        )
-                                        chatLog = chatLog + "NiRa: நோட் பண்ணிட்டேன் (${saved?.optString("bucket", activeMode)}): \"$raw\""
+                                    val chatRes = postJson(
+                                        "$coreBaseUrl/chat",
+                                        JSONObject().apply {
+                                            put("message", raw)
+                                        }
+                                    )
+                                    if (chatRes != null) {
+                                        activeMode = chatRes.optString("mode", activeMode)
+                                        val reply = chatRes.optString("reply", "பதில் கிடைக்கல.")
+                                        chatLog = chatLog + "NiRa: $reply"
                                     } else {
                                         chatLog = chatLog + "NiRa: Termux-ல nira_engine.py ஓடுதான்னு பாருடா (127.0.0.1:8765)."
                                     }
@@ -262,8 +272,8 @@ class MainActivity : FragmentActivity() {
         return try {
             val conn = (URL(urlStr).openConnection() as HttpURLConnection).apply {
                 requestMethod = "POST"
-                connectTimeout = 2000
-                readTimeout = 2000
+                connectTimeout = 2500
+                readTimeout = 2500
                 doOutput = true
                 setRequestProperty("Content-Type", "application/json; charset=utf-8")
             }
