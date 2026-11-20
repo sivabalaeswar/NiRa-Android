@@ -123,6 +123,8 @@ class MainActivity : FragmentActivity() {
                 modifier = Modifier
                     .fillMaxSize()
                     .background(bgColor)
+                    .statusBarsPadding()
+                    .navigationBarsPadding()
                     .padding(16.dp)
             ) {
                 Text(
