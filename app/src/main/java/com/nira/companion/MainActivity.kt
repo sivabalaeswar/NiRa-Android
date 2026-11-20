@@ -274,8 +274,8 @@ class MainActivity : FragmentActivity() {
         return try {
             val conn = (URL(urlStr).openConnection() as HttpURLConnection).apply {
                 requestMethod = "POST"
-                connectTimeout = 2500
-                readTimeout = 2500
+                connectTimeout = 15000
+                readTimeout = 15000
                 doOutput = true
                 setRequestProperty("Content-Type", "application/json; charset=utf-8")
             }
