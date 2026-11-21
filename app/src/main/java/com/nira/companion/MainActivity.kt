@@ -255,8 +255,8 @@ class MainActivity : FragmentActivity() {
         try {
             val conn = (URL("$coreBaseUrl/health").openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"
-                connectTimeout = 1500
-                readTimeout = 1500
+                connectTimeout = 4000
+                readTimeout = 4000
             }
             if (conn.responseCode !in 200..299) return@withContext null
             val text = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
@@ -275,8 +275,8 @@ class MainActivity : FragmentActivity() {
         return try {
             val conn = (URL(urlStr).openConnection() as HttpURLConnection).apply {
                 requestMethod = "POST"
-                connectTimeout = 15000
-                readTimeout = 15000
+                connectTimeout = 40000
+                readTimeout = 40000
                 doOutput = true
                 setRequestProperty("Content-Type", "application/json; charset=utf-8")
             }
