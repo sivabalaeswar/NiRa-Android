@@ -125,6 +125,7 @@ class MainActivity : FragmentActivity() {
                     .background(bgColor)
                     .statusBarsPadding()
                     .navigationBarsPadding()
+                    .imePadding()
                     .padding(16.dp)
             ) {
                 Text(
