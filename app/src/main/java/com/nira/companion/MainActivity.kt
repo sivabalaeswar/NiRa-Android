@@ -12,6 +12,8 @@ import android.speech.tts.TextToSpeech
 import android.webkit.ConsoleMessage
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -47,6 +49,27 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
 
             webViewClient = object : WebViewClient() {
+                override fun shouldInterceptRequest(
+                    view: WebView?,
+                    request: WebResourceRequest?
+                ): WebResourceResponse? {
+                    val url = request?.url ?: return null
+                    val path = url.path ?: return null
+                    val assetName = when {
+                        path.endsWith("/Freya.glb") -> "Freya.glb"
+                        path.endsWith("/index.html") -> "index.html"
+                        else -> null
+                    } ?: return null
+
+                    return try {
+                        val input = assets.open(assetName)
+                        val mime = if (assetName.endsWith(".glb")) "model/gltf-binary" else "text/html"
+                        WebResourceResponse(mime, "UTF-8", input)
+                    } catch (_: Exception) {
+                        null
+                    }
+                }
+
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
                     view?.evaluateJavascript("window.dispatchEvent(new Event('niraReady'));", null)
@@ -60,7 +83,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             }
 
             addJavascriptInterface(NiRaBridge(), "NiRaBridge")
-            loadUrl("file:///android_asset/index.html")
+            loadUrl("https://nira.local/index.html")
         }
 
         setContentView(webView)
@@ -145,7 +168,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
         @JavascriptInterface
         fun getDeviceInfo(): String {
-            return "Motorola Edge 60 Pro • NiRa 3D Companion"
+            return "Motorola Edge 60 Pro • NiRa 3D"
         }
     }
 
